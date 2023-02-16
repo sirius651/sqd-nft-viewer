@@ -1,0 +1,25 @@
+type Token @entity {
+  id: ID!
+  owner: Owner
+  uri: String
+  transfers: [Transfer!]! @derivedFrom(field: "token")
+  contract: Contract
+  name: String
+  price: BigInt!
+  forSale: Boolean
+}
+
+type Owner @entity {
+  id: ID!
+  ownedTokens: [Token!] @derivedFrom(field: "owner")
+}
+ 
+type Transfer @entity {
+  id: ID!
+  from: Owner 
+  to: Owner
+  timestamp: DateTime!
+  block: Int!
+  token: Token!
+  price: BigInt!
+}
