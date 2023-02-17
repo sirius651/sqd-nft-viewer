@@ -4,7 +4,7 @@ import {BatchContext, BatchProcessorItem, SubstrateBatchProcessor} from "@subsqu
 import {Store, TypeormDatabase} from "@subsquid/typeorm-store"
 import {In} from "typeorm"
 import * as rmrk from "./abi/rmrk"
-import {Owner, Transfer} from "./model/generated"
+import {Owner, Token, Transfer} from "./model/generated"
  
 // const CONTRACT_ADDRESS = '0x5207202c27b646ceeb294ce516d4334edafbd771f869215cb070ba51dd7e2c72' 
 const CONTRACT_ADDRESS = '0x21ca908ec863813eec00aede9370c38ce3c6176fc40eeb87f18383c71f62eb47'
@@ -29,27 +29,36 @@ type Ctx = BatchContext<Store, Item>
 processor.run(new TypeormDatabase(), async ctx => {
     const txs = extractRecords(ctx)
  
-    const ownerIds = new Set<string>()
+    const tokensIds = new Set<string>()
+    const ownersIds = new Set<string>()
     txs.forEach(tx => {
+      tokensIds.add(tx.id)
       if (tx.from) {
-        ownerIds.add(tx.from)
+        ownersIds.add(tx.from)
       }
       if (tx.to) {
-        ownerIds.add(tx.to)
+        ownersIds.add(tx.to)
       }
     })
 
-    ctx.log.info(ownerIds)
+    ctx.log.info(ownersIds)
 
+
+    const tokensMap = await ctx.store.findBy(Token, {
+      id: In([...tokensIds])
+    }).then(tokens => {
+      return new Map(tokens.map(token => [token.id, token]))
+    })
     const ownersMap = await ctx.store.findBy(Owner, {
-        id: In([...ownerIds])
+      id: In([...ownersIds])
     }).then(owners => {
-        return new Map(owners.map(owner => [owner.id, owner]))
+      return new Map(owners.map(owner => [owner.id, owner]))
     })
  
     const transfers = txs.map(tx => {
+        const tokenId = tx.id
         const transfer = new Transfer({
-            id: tx.id,
+            id: tokenId,
             block: tx.block,
             timestamp: tx.timestamp
         })
@@ -69,11 +78,23 @@ processor.run(new TypeormDatabase(), async ctx => {
                 ownersMap.set(tx.to, transfer.to)
             }
         }
+
+        let token = tokensMap.get(tokenId)
+        if (token == null) {
+          token = new Token({
+            id: tokenId,
+          })
+          tokensMap.set(tokenId, token)
+        }
+        token.owner = transfer.to
+
+        transfer.token = token
  
         return transfer
     })
  
     await ctx.store.save([...ownersMap.values()])
+    await ctx.store.save([...tokensMap.values()])
     await ctx.store.insert(transfers)
 })
  

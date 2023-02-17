@@ -1,4 +1,5 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
+import {Token} from "./token.model"
 
 @Entity_()
 export class Owner {
@@ -8,4 +9,7 @@ export class Owner {
 
     @PrimaryColumn_()
     id!: string
+
+    @OneToMany_(() => Token, e => e.owner)
+    ownedTokens!: Token[]
 }
