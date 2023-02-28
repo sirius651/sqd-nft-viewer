@@ -25,14 +25,13 @@ const processor = new SubstrateBatchProcessor()
 type Item = BatchProcessorItem<typeof processor>
 type Ctx = BatchContext<Store, Item>
 
-
 processor.run(new TypeormDatabase(), async ctx => {
     const txs = extractRecords(ctx)
  
     const tokensIds = new Set<string>()
     const ownersIds = new Set<string>()
     txs.forEach(tx => {
-      tokensIds.add(tx.id)
+      tokensIds.add(tx.tokenId)
       if (tx.from) {
         ownersIds.add(tx.from)
       }
@@ -42,7 +41,6 @@ processor.run(new TypeormDatabase(), async ctx => {
     })
 
     ctx.log.info(ownersIds)
-
 
     const tokensMap = await ctx.store.findBy(Token, {
       id: In([...tokensIds])
@@ -56,9 +54,9 @@ processor.run(new TypeormDatabase(), async ctx => {
     })
  
     const transfers = txs.map(tx => {
-        const tokenId = tx.id
+        const tokenId = tx.tokenId
         const transfer = new Transfer({
-            id: tokenId,
+            id: tx.id,
             block: tx.block,
             timestamp: tx.timestamp
         })
@@ -101,12 +99,12 @@ processor.run(new TypeormDatabase(), async ctx => {
  
 interface TransferRecord {
     id: string
+    tokenId: string
     from?: string
     to?: string
     block: number
     timestamp: Date
 }
-
  
 function extractRecords(ctx: Ctx): TransferRecord[] {
     const records: TransferRecord[] = []
@@ -118,8 +116,10 @@ function extractRecords(ctx: Ctx): TransferRecord[] {
                 const event = rmrk.decodeEvent(item.event.args.data)
                 ctx.log.info(event)
                 if (event.__kind === 'Transfer') {
+                  ctx.log.info('tokenId: ' + event.id.value)
                   const newObj = {
-                    id: item.event.id, // token id
+                    id: item.event.id,
+                    tokenId: event.id.value.toString(),
                     from: event.from && ss58.codec(5).encode(event.from),
                     to: event.to && ss58.codec(5).encode(event.to),
                     block: block.header.height,
