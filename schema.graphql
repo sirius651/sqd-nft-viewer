@@ -1,12 +1,18 @@
 type Token @entity {
   id: ID!
   owner: Owner
+  contract: Contract!
   transfers: [Transfer!]! @derivedFrom(field: "token")
 }
 
 type Owner @entity {
   id: ID!
   ownedTokens: [Token!] @derivedFrom(field: "owner")
+}
+
+type Contract @entity {
+  id: ID!
+  tokens: [Token!] @derivedFrom(field: "contract")
 }
  
 type Transfer @entity {
