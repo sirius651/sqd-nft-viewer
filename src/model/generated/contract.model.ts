@@ -1,5 +1,5 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
-import {Token} from "./token.model"
+import {ContractToken} from "./contractToken.model"
 
 @Entity_()
 export class Contract {
@@ -10,6 +10,6 @@ export class Contract {
     @PrimaryColumn_()
     id!: string
 
-    @OneToMany_(() => Token, e => e.contract)
-    tokens!: Token[]
+    @OneToMany_(() => ContractToken, e => e.contract)
+    tokens!: ContractToken[]
 }

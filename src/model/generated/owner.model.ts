@@ -1,5 +1,5 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
-import {Token} from "./token.model"
+import {OwnerToken} from "./ownerToken.model"
 
 @Entity_()
 export class Owner {
@@ -10,6 +10,6 @@ export class Owner {
     @PrimaryColumn_()
     id!: string
 
-    @OneToMany_(() => Token, e => e.owner)
-    ownedTokens!: Token[]
+    @OneToMany_(() => OwnerToken, e => e.owner)
+    tokens!: OwnerToken[]
 }

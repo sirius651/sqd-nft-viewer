@@ -1,18 +1,30 @@
-type Token @entity {
+type ContractToken @entity {
   id: ID!
-  owner: Owner
   contract: Contract!
-  transfers: [Transfer!]! @derivedFrom(field: "token")
+  token: Token!
 }
 
-type Owner @entity {
+type OwnerToken @entity {
   id: ID!
-  ownedTokens: [Token!] @derivedFrom(field: "owner")
+  owner: Owner!
+  token: Token!
+}
+
+type Token @entity {
+  id: ID!
+  transfers: [Transfer!]! @derivedFrom(field: "token")
+  contracts: [ContractToken!]! @derivedFrom(field: "token")
+  owners: [OwnerToken!]! @derivedFrom(field: "token")
 }
 
 type Contract @entity {
   id: ID!
-  tokens: [Token!] @derivedFrom(field: "contract")
+  tokens: [ContractToken!]! @derivedFrom(field: "contract")
+}
+
+type Owner @entity {
+  id: ID!
+  tokens: [OwnerToken!]! @derivedFrom(field: "owner")
 }
  
 type Transfer @entity {
