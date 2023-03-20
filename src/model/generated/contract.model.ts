@@ -1,15 +1,15 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
-import {OwnerToken} from "./ownerToken.model"
+import {ContractToken} from "./contractToken.model"
 
 @Entity_()
-export class Owner {
-    constructor(props?: Partial<Owner>) {
+export class Contract {
+    constructor(props?: Partial<Contract>) {
         Object.assign(this, props)
     }
 
     @PrimaryColumn_()
     id!: string
 
-    @OneToMany_(() => OwnerToken, e => e.owner)
-    tokens!: OwnerToken[]
+    @OneToMany_(() => ContractToken, e => e.contract)
+    tokens!: ContractToken[]
 }
