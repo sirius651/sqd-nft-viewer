@@ -4,17 +4,16 @@ type ContractToken @entity {
   token: Token!
 }
 
-type OwnerToken @entity {
+type OwnerContractToken @entity {
   id: ID!
   owner: Owner!
-  token: Token!
+  contractToken: ContractToken!
 }
 
 type Token @entity {
   id: ID!
   transfers: [Transfer!]! @derivedFrom(field: "token")
   contracts: [ContractToken!]! @derivedFrom(field: "token")
-  owners: [OwnerToken!]! @derivedFrom(field: "token")
 }
 
 type Contract @entity {
@@ -24,12 +23,13 @@ type Contract @entity {
 
 type Owner @entity {
   id: ID!
-  tokens: [OwnerToken!]! @derivedFrom(field: "owner")
+  tokens: [OwnerContractToken!]! @derivedFrom(field: "owner")
 }
  
 type Transfer @entity {
   id: ID!
   token: Token!
+  contract: Contract!
   from: Owner
   to: Owner
   timestamp: DateTime! @index

@@ -1,5 +1,6 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
 import {Token} from "./token.model"
+import {Contract} from "./contract.model"
 import {Owner} from "./owner.model"
 
 @Entity_()
@@ -14,6 +15,10 @@ export class Transfer {
     @Index_()
     @ManyToOne_(() => Token, {nullable: true})
     token!: Token
+
+    @Index_()
+    @ManyToOne_(() => Contract, {nullable: true})
+    contract!: Contract
 
     @Index_()
     @ManyToOne_(() => Owner, {nullable: true})

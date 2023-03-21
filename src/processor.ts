@@ -5,7 +5,7 @@ import {BatchContext, BatchProcessorItem, SubstrateBatchProcessor} from "@subsqu
 import {Store, TypeormDatabase} from "@subsquid/typeorm-store"
 import {In} from "typeorm"
 import * as rmrk from "./abi/rmrk"
-import {Owner, Token, Contract, ContractToken, OwnerToken, Transfer} from "./model/generated"
+import {Owner, Token, Contract, ContractToken, OwnerContractToken, Transfer} from "./model/generated"
  
 const BASE_CONTRACT_ADDRESS = '0x1e0816527de55258aff862dd8d82949cf0504756d2b3638a0e6839c05d2cee53'
 // const BASE_CONTRACT_SS58_ADDRESS = 'Wcg8cuKcJgQGm15tZ5F14JXuWehm1Q67K92jfbTpKPrPm6S'
@@ -71,11 +71,13 @@ processor.run(new TypeormDatabase(), async ctx => {
     })
 
     const contractTokensMap: Map<String, ContractToken> = new Map()
-    const ownerTokensMap: Map<String, OwnerToken> = new Map()
+    const ownerContractTokensMap: Map<String, OwnerContractToken> = new Map()
  
     const transfers = txs.map(tx => {
         const tokenId = tx.tokenId
         const contractId = tx.contract
+        const contractTokenMapId = contractId + '-' + tokenId
+
         const transfer = new Transfer({
             id: tx.id, 
             block: tx.block,
@@ -85,8 +87,8 @@ processor.run(new TypeormDatabase(), async ctx => {
         if (tx.from) {
             transfer.from = ownersMap.get(tx.from)
             if (transfer.from == null) {
-                transfer.from = new Owner({id: tx.from})
-                ownersMap.set(tx.from, transfer.from)
+              transfer.from = new Owner({id: tx.from})
+              ownersMap.set(tx.from, transfer.from)
             }
         }
  
@@ -114,10 +116,9 @@ processor.run(new TypeormDatabase(), async ctx => {
           tokensMap.set(tokenId, token)
         }
 
-        const contractTokenMapId = contractId + '-' + tokenId
         let contractToken = contractTokensMap.get(contractTokenMapId)
         if (contractToken == null) {
-          const contractToken = new ContractToken({
+          contractToken = new ContractToken({
             id: contractTokenMapId,
             contract: contract,
             token: token
@@ -125,21 +126,26 @@ processor.run(new TypeormDatabase(), async ctx => {
           contractTokensMap.set(contractTokenMapId, contractToken)
         }
 
-        const ownerTokenMapId = contractId + '-' + tokenId + '-' + tx.to
-        let ownerToken = ownerTokensMap.get(ownerTokenMapId)
-        if (ownerToken == null && transfer.to) {
-          const ownerToken = new OwnerToken({
-            id: ownerTokenMapId,
-            owner: transfer.to,
-            token: token
-          })
-          ownerTokensMap.set(ownerTokenMapId, ownerToken)
+        let ownerContractToken = ownerContractTokensMap.get(contractTokenMapId)
+        const ownerContractTokenMapId = contractTokenMapId + '-' + tx.to
+        const newOwner = transfer.to
+        if (newOwner) {
+          if (ownerContractToken == null) {
+            ownerContractToken = new OwnerContractToken({
+              id: ownerContractTokenMapId,
+              owner: newOwner,
+              contractToken: contractToken
+            })
+          } else {
+            ownerContractToken.id = ownerContractTokenMapId
+            ownerContractToken.owner = newOwner
+            ownerContractToken.contractToken = contractToken
+          }
+          
+          ownerContractTokensMap.set(contractTokenMapId, ownerContractToken)  
         }
         
-        // if (tx.to === 'axodJWpkSi9E5k7SgewYCCnTMZw3y6n79nuLevTCGFt7ADw'){
-          // ctx.log.info('c: '+token.contract.id)
-        // }
-
+        transfer.contract = contract
         transfer.token = token
  
         return transfer
@@ -149,7 +155,7 @@ processor.run(new TypeormDatabase(), async ctx => {
     await ctx.store.save([...ownersMap.values()])
     await ctx.store.save([...tokensMap.values()])
     await ctx.store.save([...contractTokensMap.values()])
-    await ctx.store.save([...ownerTokensMap.values()])
+    await ctx.store.save([...ownerContractTokensMap.values()])
     await ctx.store.insert(transfers)
 })
  

@@ -1,5 +1,5 @@
 export * from "./contractToken.model"
-export * from "./ownerToken.model"
+export * from "./ownerContractToken.model"
 export * from "./token.model"
 export * from "./contract.model"
 export * from "./owner.model"

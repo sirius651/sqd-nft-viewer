@@ -1,5 +1,5 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
-import {OwnerToken} from "./ownerToken.model"
+import {OwnerContractToken} from "./ownerContractToken.model"
 
 @Entity_()
 export class Owner {
@@ -10,6 +10,6 @@ export class Owner {
     @PrimaryColumn_()
     id!: string
 
-    @OneToMany_(() => OwnerToken, e => e.owner)
-    tokens!: OwnerToken[]
+    @OneToMany_(() => OwnerContractToken, e => e.owner)
+    tokens!: OwnerContractToken[]
 }

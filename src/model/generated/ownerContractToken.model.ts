@@ -1,10 +1,10 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
 import {Owner} from "./owner.model"
-import {Token} from "./token.model"
+import {ContractToken} from "./contractToken.model"
 
 @Entity_()
-export class OwnerToken {
-    constructor(props?: Partial<OwnerToken>) {
+export class OwnerContractToken {
+    constructor(props?: Partial<OwnerContractToken>) {
         Object.assign(this, props)
     }
 
@@ -16,6 +16,6 @@ export class OwnerToken {
     owner!: Owner
 
     @Index_()
-    @ManyToOne_(() => Token, {nullable: true})
-    token!: Token
+    @ManyToOne_(() => ContractToken, {nullable: true})
+    contractToken!: ContractToken
 }
