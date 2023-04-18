@@ -7,8 +7,9 @@ import {In} from "typeorm"
 import * as rmrk from "./abi/rmrk"
 import {Owner, Token, Contract, ContractToken, OwnerContractToken, Transfer} from "./model/generated"
  
-const BASE_CONTRACT_ADDRESS = '0xab9b527849d82fd8ad0ca796fa6379e1168f680f7c8e0dfcd0be560866fb79f5'
-const BASE_CONTRACT_SS58_ADDRESS = 'ZpJd27qjg3VNk5gTSeMSVii8p4VLMBjy67mBvWDQWRRsZzm'
+const BASE_CONTRACT_ADDRESSES = ['0x5a472c3f3768fd7388b79b50358a4586d069e52ed8d4afdfb97e9b9a17858aa0', '0xab9b527849d82fd8ad0ca796fa6379e1168f680f7c8e0dfcd0be560866fb79f5']
+const BASE_CONTRACT_SS58_ADDRESSES = ['XyfkCVRSRTChUft42e8c6FD7RhTeAuPcq8sNZ8vb1PbycDB', 'ZpJd27qjg3VNk5gTSeMSVii8p4VLMBjy67mBvWDQWRRsZzm']
+
 const EQUIP_CONTRACT_ADDRESSES = ['0xcf61acd6296b717b8f18b49e2e4390058490ea13858d71c502e8a9cd1cf38d81', '0x0c8ba69231ceffb9b6dca2bf77d3a47011fb0c100a0bb0730d566d7efab9d931', '0x3e707397a9159b2214da3d36346ead6f053aa3ef30cf277630149c910f343efe', '0xefea7e8dc7dcfc12554d93b18063791c47653415e90b4a622b3133e3198ed1e8']
 // const EQUIP_CONTRACT_SS58_ADDRESSES = ['adDDmXkrVUhcFNy74zJm9CohrvDCbBixhvLCzrrmzo5HG3U', 'WDkMQy5AgSXfByPW23szAFYrxtXbNUA7umL49YbTZysfa9w', 'XMAfed8ZvqDUQzoy8NuU715vhKs6rRckSYwSWuqQsM8ZWGv', 'bMsPywwU4m9F9ZZ48cSffEyGeYJ66A5N3PGDv76Yogpp7zX']
  
@@ -17,11 +18,20 @@ const processor = new SubstrateBatchProcessor()
     .setDataSource({
         archive: lookupArchive("shibuya", { release: "FireSquid" })
     })
-    .addContractsContractEmitted(BASE_CONTRACT_ADDRESS, {
-        data: {
-            event: {args: true}
-        }
+    .addContractsContractEmitted(BASE_CONTRACT_ADDRESSES[0], {
+      data: {
+          event: {args: true}
+      }
     } as const)
+
+for (let i = 1; i < BASE_CONTRACT_ADDRESSES.length; i++) {
+  const address = BASE_CONTRACT_ADDRESSES[i];
+  processor.addContractsContractEmitted(address, {
+    data: {
+        event: {args: true}
+    }
+  } as const)
+}
 
 for (const address of EQUIP_CONTRACT_ADDRESSES) {
   processor.addContractsContractEmitted(address, {
@@ -129,7 +139,7 @@ processor.run(new TypeormDatabase(), async ctx => {
         let ownerContractToken = ownerContractTokensMap.get(contractTokenMapId)
         const ownerContractTokenMapId = contractTokenMapId + '-' + tx.to
         const newOwner = transfer.to
-        if (newOwner && contractId === BASE_CONTRACT_SS58_ADDRESS) {
+        if (newOwner && BASE_CONTRACT_SS58_ADDRESSES.includes(contractId)) {
           if (ownerContractToken == null) {
             ownerContractToken = new OwnerContractToken({
               id: ownerContractTokenMapId,
@@ -176,7 +186,7 @@ function extractRecords(ctx: Ctx): TransferRecord[] {
         for (const item of block.items) {
           // ctx.log.info('Item: ' + item.name)
           // ctx.log.info(item)
-            if (item.name === 'Contracts.ContractEmitted' && (item.event.args.contract === BASE_CONTRACT_ADDRESS || EQUIP_CONTRACT_ADDRESSES.includes(item.event.args.contract))) {
+            if (item.name === 'Contracts.ContractEmitted' && (BASE_CONTRACT_ADDRESSES.includes(item.event.args.contract) || EQUIP_CONTRACT_ADDRESSES.includes(item.event.args.contract))) {
                 const event = rmrk.decodeEvent(item.event.args.data)
                 ctx.log.info(event)
                 if (event.__kind === 'Transfer') {
